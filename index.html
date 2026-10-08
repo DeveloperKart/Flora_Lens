@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FloraLens — Plant AI</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .result-hidden {
+            display: none;
+        }
+
+        .confidence-bar {
+            transition: width 0.4s ease;
+        }
+
+        video {
+            object-fit: cover;
+        }
+    </style>
+</head>
+
+<body class="bg-green-50 text-gray-800">
+
+<!-- ================= NAVBAR ================= -->
+
+<nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-green-100">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+
+        <div class="flex items-center gap-2">
+            <div class="text-2xl">🌿</div>
+
+            <div>
+                <h1 class="font-extrabold text-xl text-green-900">
+                    FloraLens
+                </h1>
+
+                <p class="text-xs text-green-600 font-semibold">
+                    Plant AI
+                </p>
+            </div>
+        </div>
+
+        <a href="#about"
+           class="text-sm font-semibold text-green-800 hover:text-green-600 transition">
+            About
+        </a>
+
+    </div>
+</nav>
+
+
+<!-- ================= HERO ================= -->
+
+<section class="pt-32 pb-20 px-6">
+
+    <div class="max-w-5xl mx-auto text-center">
+
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-green-100 rounded-full text-green-700 text-sm font-bold mb-6">
+            🤖 AI-Powered Plant Recognition
+        </div>
+
+        <h2 class="text-5xl md:text-6xl font-extrabold text-green-950 leading-tight">
+            Teach AI to
+            <span class="text-green-600">
+                recognize plants.
+            </span>
+        </h2>
+
+        <p class="mt-6 text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Use artificial intelligence to identify medicinal plants
+            and distinguish them from weeds using your camera.
+        </p>
+
+        <button
+            onclick="openPlantAI()"
+            class="mt-8 px-8 py-4 bg-green-600 text-white rounded-2xl font-bold shadow-lg hover:bg-green-700 hover:scale-105 transition">
+
+            🚀 Get Started
+
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- ================= SCANNER ================= -->
+
+<section id="scanner" class="px-6 pb-24">
+
+    <div class="max-w-6xl mx-auto">
+
+        <div class="bg-white rounded-3xl shadow-xl border border-green-100 overflow-hidden">
+
+            <!-- Scanner Header -->
+
+            <div class="p-6 md:p-8 border-b border-green-100">
+
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+                    <div>
+
+                        <p class="text-sm text-green-600 font-bold uppercase tracking-wider">
+                            Live Scanner
+                        </p>
+
+                        <h3 class="text-2xl font-extrabold text-green-950 mt-1">
+                            Identify a Plant
+                        </h3>
+
+                    </div>
+
+                    <div id="status"
+                         class="px-4 py-2 rounded-full bg-gray-100 text-gray-600 text-sm font-semibold">
+                        Camera inactive
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Scanner Body -->
+
+            <div class="p-6 md:p-8">
+
+                <div class="grid lg:grid-cols-2 gap-8">
+
+                    <!-- CAMERA -->
+
+                    <div>
+
+                        <div class="relative bg-black rounded-3xl overflow-hidden aspect-square">
+
+                            <video
+                                id="camera"
+                                autoplay
+                                playsinline
+                                muted
+                                class="w-full h-full">
+                            </video>
+
+                            <!-- Camera Overlay -->
+
+                            <div class="absolute inset-0 pointer-events-none">
+
+                                <div class="absolute top-5 left-5 w-10 h-10 border-t-4 border-l-4 border-white rounded-tl-xl"></div>
+
+                                <div class="absolute top-5 right-5 w-10 h-10 border-t-4 border-r-4 border-white rounded-tr-xl"></div>
+
+                                <div class="absolute bottom-5 left-5 w-10 h-10 border-b-4 border-l-4 border-white rounded-bl-xl"></div>
+
+                                <div class="absolute bottom-5 right-5 w-10 h-10 border-b-4 border-r-4 border-white rounded-br-xl"></div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Camera Buttons -->
+
+                        <div class="flex flex-wrap gap-3 mt-5">
+
+                            <button
+                                id="start-btn"
+                                onclick="startCamera()"
+                                class="flex-1 min-w-[140px] px-5 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition">
+
+                                📷 Start Camera
+
+                            </button>
+
+                            <button
+                                onclick="stopCamera()"
+                                class="flex-1 min-w-[140px] px-5 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition">
+
+                                ⏹ Stop
+
+                            </button>
+
+                            <button
+                                onclick="switchCamera()"
+                                class="flex-1 min-w-[140px] px-5 py-3 bg-green-50 text-green-700 rounded-xl font-bold hover:bg-green-100 transition">
+
+                                🔄 Switch Camera
+
+                            </button>
+
+                        </div>
+
+
+                        <!-- Camera Guidance -->
+
+                        <div class="mt-5 p-4 rounded-2xl bg-yellow-50 border border-yellow-100">
+
+                            <p class="text-sm text-yellow-800 leading-relaxed">
+
+                                💡 <strong>For better accuracy:</strong>
+                                Keep the plant clearly visible and well-lit.
+                                Avoid excessive background clutter, shadows,
+                                motion and noise. The AI was trained using
+                                specific examples, so unusual backgrounds may
+                                affect its prediction.
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- RESULTS -->
+
+                    <div>
+
+                        <div class="bg-green-50 rounded-3xl p-6 border border-green-100">
+
+                            <p class="text-sm text-green-600 font-bold uppercase tracking-wider">
+                                AI Prediction
+                            </p>
+
+                            <h3
+                                id="prediction"
+                                class="text-3xl font-extrabold text-green-950 mt-2">
+                                Waiting...
+                            </h3>
+
+
+                            <!-- Confidence -->
+
+                            <div class="mt-6">
+
+                                <div class="flex justify-between items-center mb-2">
+
+                                    <span class="text-sm font-semibold text-gray-600">
+                                        Confidence
+                                    </span>
+
+                                    <span
+                                        id="confidence"
+                                        class="text-sm font-extrabold text-green-700">
+                                        0%
+                                    </span>
+
+                                </div>
+
+                                <div class="w-full h-3 bg-green-100 rounded-full overflow-hidden">
+
+                                    <div
+                                        id="confidence-bar"
+                                        class="confidence-bar h-full bg-green-600 rounded-full"
+                                        style="width: 0%">
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- Model Scores -->
+
+                            <div class="mt-8">
+
+                                <h4 class="font-extrabold text-green-900 mb-4">
+                                    Model Scores
+                                </h4>
+
+                                <div id="scores" class="space-y-3">
+
+                                    <div class="text-sm text-gray-500">
+                                        Start the camera to see predictions.
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- BENEFITS CARD -->
+
+                        <div
+                            id="benefits-card"
+                            class="mt-6 p-5 rounded-2xl bg-green-50 border border-green-100 result-hidden">
+
+                            <div class="flex items-start gap-3">
+
+                                <div class="text-2xl">
+                                    🌱
+                                </div>
+
+                                <div>
+
+                                    <h4
+                                        id="benefits-title"
+                                        class="font-extrabold text-green-900">
+                                        Plant Information
+                                    </h4>
+
+                                    <p
+                                        id="benefits-text"
+                                        class="text-sm text-green-800 mt-2 leading-relaxed">
+                                        Information will appear after a
+                                        confident identification.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= ABOUT ================= -->
+
+<section id="about" class="px-6 py-24 bg-white">
+
+    <div class="max-w-5xl mx-auto">
+
+        <div class="text-center">
+
+            <p class="text-sm text-green-600 font-bold uppercase tracking-wider">
+                About FloraLens
+            </p>
+
+            <h2 class="text-4xl font-extrabold text-green-950 mt-2">
+                AI meets the world of plants.
+            </h2>
+
+            <p class="mt-6 text-gray-600 leading-relaxed max-w-3xl mx-auto">
+
+                FloraLens is an educational AI project created using
+                Google Teachable Machine. The model has been trained to
+                recognize three medicinal plants and one weed.
+
+                <br><br>
+
+                The system demonstrates how machine learning can be
+                trained using images and then used in a real-world
+                camera application.
+
+            </p>
+
+        </div>
+
+
+        <div class="grid md:grid-cols-3 gap-6 mt-12">
+
+            <div class="p-6 bg-green-50 rounded-2xl border border-green-100">
+
+                <div class="text-3xl mb-4">
+                    🧠
+                </div>
+
+                <h3 class="font-extrabold text-green-900">
+                    Machine Learning
+                </h3>
+
+                <p class="text-sm text-gray-600 mt-2 leading-relaxed">
+
+                    The model learns visual patterns from example images
+                    and uses them to classify new images.
+
+                </p>
+
+            </div>
+
+
+            <div class="p-6 bg-green-50 rounded-2xl border border-green-100">
+
+                <div class="text-3xl mb-4">
+                    📷
+                </div>
+
+                <h3 class="font-extrabold text-green-900">
+                    Live Camera
+                </h3>
+
+                <p class="text-sm text-gray-600 mt-2 leading-relaxed">
+
+                    The trained model receives frames from your camera
+                    and continuously analyzes them.
+
+                </p>
+
+            </div>
+
+
+            <div class="p-6 bg-green-50 rounded-2xl border border-green-100">
+
+                <div class="text-3xl mb-4">
+                    🌱
+                </div>
+
+                <h3 class="font-extrabold text-green-900">
+                    Plant Awareness
+                </h3>
+
+                <p class="text-sm text-gray-600 mt-2 leading-relaxed">
+
+                    The project demonstrates how AI can help people
+                    explore and learn about plants.
+
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="mt-10 p-5 rounded-2xl bg-yellow-50 border border-yellow-200">
+
+            <p class="text-sm text-yellow-800 leading-relaxed">
+
+                ⚠️ <strong>Important:</strong>
+                FloraLens is an educational AI demonstration.
+                Predictions may be incorrect, especially with poor
+                lighting, background clutter, unusual camera angles,
+                motion or noisy visual environments.
+
+                Do not consume or use a plant based solely on an AI
+                prediction. Always verify plant identity with a reliable
+                source or qualified expert.
+
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= FOOTER ================= -->
+
+<footer class="bg-green-950 text-white px-6 py-8">
+
+    <div class="max-w-6xl mx-auto text-center">
+
+        <div class="text-2xl mb-2">
+            🌿 FloraLens
+        </div>
+
+        <p class="text-green-300 text-sm">
+
+            Built with Google Teachable Machine
+
+        </p>
+
+        <p class="text-green-400 text-xs mt-2">
+
+            PRESIDENCY THE INTERNATIONAL SCHOOL
+
+        </p>
+
+    </div>
+
+</footer>
+
+
+<!-- ================= JAVASCRIPT ================= -->
+
+<script>
+
+    // =========================================================
+    // MODEL
+    // =========================================================
+
+    const MODEL_URL =
+        "https://teachablemachine.withgoogle.com/models/aI8LpsF1Z/";
+
+
+    // =========================================================
+    // SETTINGS
+    // =========================================================
+
+    const CONFIDENCE_THRESHOLD = 85;
+
+    let model = null;
+    let stream = null;
+    let animationId = null;
+
+    let currentFacingMode = "environment";
+
+    // Prevent repeated voice announcements
+    let lastSpokenClass = "";
+
+    // Stores the currently detected plant
+    let currentDetectedClass = "";
+
+
+    // =========================================================
+    // PLANT DATA
+    // =========================================================
+
+    const plantData = {
+
+        "Tulsi": {
+
+            title: "🌿 Tulsi",
+
+            description:
+                "Tulsi, also known as Holy Basil, is a culturally important plant traditionally valued in India. It is commonly associated with traditional wellness practices and has aromatic leaves."
+
+        },
+
+
+        "Neem": {
+
+            title: "🌳 Neem",
+
+            description:
+                "Neem is a well-known tree native to the Indian subcontinent. It has a long history of traditional use and is valued for its many cultural and botanical properties."
+
+        },
+
+
+        "Aloe Vera": {
+
+            title: "🌵 Aloe Vera",
+
+            description:
+                "Aloe Vera is a succulent plant known for its thick, water-rich leaves. The gel inside its leaves has been traditionally used in skincare and other wellness practices."
+
+        }
+
+    };
+
+
+    // =========================================================
+    // GET ELEMENTS
+    // =========================================================
+
+    const video =
+        document.getElementById("camera");
+
+    const prediction =
+        document.getElementById("prediction");
+
+    const confidence =
+        document.getElementById("confidence");
+
+    const confidenceBar =
+        document.getElementById("confidence-bar");
+
+    const status =
+        document.getElementById("status");
+
+    const scores =
+        document.getElementById("scores");
+
+    const benefitsCard =
+        document.getElementById("benefits-card");
+
+    const benefitsTitle =
+        document.getElementById("benefits-title");
+
+    const benefitsText =
+        document.getElementById("benefits-text");
+
+
+    // =========================================================
+    // GET STARTED
+    // =========================================================
+
+    function openPlantAI() {
+
+        document
+            .getElementById("scanner")
+            .scrollIntoView({
+                behavior: "smooth"
+            });
+
+        setTimeout(() => {
+
+            startCamera();
+
+        }, 600);
+
+    }
+
+
+    // =========================================================
+    // LOAD MODEL
+    // =========================================================
+
+    async function loadModel() {
+
+        if (model) {
+            return;
+        }
+
+        status.textContent =
+            "Loading AI model...";
+
+        status.className =
+            "px-4 py-2 rounded-full bg-yellow-100 text-yellow-700 text-sm font-semibold";
+
+
+        try {
+
+            const modelURL =
+                MODEL_URL + "model.json";
+
+            const metadataURL =
+                MODEL_URL + "metadata.json";
+
+
+            model =
+                await tmImage.load(
+                    modelURL,
+                    metadataURL
+                );
+
+
+            status.textContent =
+                "AI model ready";
+
+            status.className =
+                "px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-semibold";
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            status.textContent =
+                "Model loading failed";
+
+            status.className =
+                "px-4 py-2 rounded-full bg-red-100 text-red-700 text-sm font-semibold";
+
+        }
+
+    }
+
+
+    // =========================================================
+    // START CAMERA
+    // =========================================================
+
+    async function startCamera() {
+
+        try {
+
+            stopCamera(false);
+
+            await loadModel();
+
+
+            stream =
+                await navigator.mediaDevices.getUserMedia({
+
+                    video: {
+
+                        facingMode: {
+                            ideal: currentFacingMode
+                        },
+
+                        width: {
+                            ideal: 1280
+                        },
+
+                        height: {
+                            ideal: 720
+                        }
+
+                    },
+
+                    audio: false
+
+                });
+
+
+            video.srcObject = stream;
+
+
+            await video.play();
+
+
+            status.textContent =
+                currentFacingMode === "environment"
+                    ? "Rear camera active"
+                    : "Front camera active";
+
+
+            status.className =
+                "px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-semibold";
+
+
+            prediction.textContent =
+                "Analyzing...";
+
+
+            animationId =
+                requestAnimationFrame(predict);
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            status.textContent =
+                "Camera access failed";
+
+            status.className =
+                "px-4 py-2 rounded-full bg-red-100 text-red-700 text-sm font-semibold";
+
+
+            prediction.textContent =
+                "Camera unavailable";
+
+        }
+
+    }
+
+
+    // =========================================================
+    // STOP CAMERA
+    // =========================================================
+
+    function stopCamera(resetUI = true) {
+
+        if (animationId) {
+
+            cancelAnimationFrame(animationId);
+
+            animationId = null;
+
+        }
+
+
+        if (stream) {
+
+            stream
+                .getTracks()
+                .forEach(track => track.stop());
+
+            stream = null;
+
+        }
+
+
+        video.srcObject = null;
+
+
+        // Stop any current voice
+        if ("speechSynthesis" in window) {
+
+            window.speechSynthesis.cancel();
+
+        }
+
+
+        lastSpokenClass = "";
+
+        currentDetectedClass = "";
+
+
+        if (resetUI) {
+
+            status.textContent =
+                "Camera inactive";
+
+            status.className =
+                "px-4 py-2 rounded-full bg-gray-100 text-gray-600 text-sm font-semibold";
+
+
+            prediction.textContent =
+                "Waiting...";
+
+
+            confidence.textContent =
+                "0%";
+
+
+            confidenceBar.style.width =
+                "0%";
+
+
+            hideBenefits();
+
+        }
+
+    }
+
+
+    // =========================================================
+    // SWITCH CAMERA
+    // =========================================================
+
+    async function switchCamera() {
+
+        currentFacingMode =
+            currentFacingMode === "environment"
+                ? "user"
+                : "environment";
+
+
+        if (stream) {
+
+            await startCamera();
+
+        }
+
+    }
+
+
+    // =========================================================
+    // PREDICT
+    // =========================================================
+
+    async function predict() {
+
+        if (!model || !stream) {
+            return;
+        }
+
+
+        try {
+
+            const predictions =
+                await model.predict(
+                    video,
+                    false
+                );
+
+
+            updatePrediction(predictions);
+
+
+        } catch (error) {
+
+            console.error(
+                "Prediction error:",
+                error
+            );
+
+        }
+
+
+        if (stream) {
+
+            animationId =
+                requestAnimationFrame(predict);
+
+        }
+
+    }
+
+
+    // =========================================================
+    // UPDATE PREDICTION
+    // =========================================================
+
+    function updatePrediction(predictions) {
+
+        if (!predictions || predictions.length === 0) {
+            return;
+        }
+
+
+        // Sort highest confidence first
+
+        predictions.sort(
+            (a, b) =>
+                b.probability - a.probability
+        );
+
+
+        const best =
+            predictions[0];
+
+
+        const className =
+            best.className;
+
+
+        const probability =
+            best.probability;
+
+
+        const percentage =
+            Math.round(
+                probability * 100
+            );
+
+
+        // Update UI
+
+        prediction.textContent =
+            className;
+
+
+        confidence.textContent =
+            percentage + "%";
+
+
+        confidenceBar.style.width =
+            percentage + "%";
+
+
+        // Model scores
+
+        scores.innerHTML = "";
+
+
+        predictions.forEach(item => {
+
+            const percent =
+                Math.round(
+                    item.probability * 100
+                );
+
+
+            const row =
+                document.createElement("div");
+
+
+            row.innerHTML = `
+
+                <div class="flex justify-between text-sm mb-1">
+
+                    <span class="font-semibold text-gray-700">
+                        ${item.className}
+                    </span>
+
+                    <span class="font-bold text-green-700">
+                        ${percent}%
+                    </span>
+
+                </div>
+
+                <div class="w-full h-2 bg-white rounded-full overflow-hidden">
+
+                    <div
+                        class="h-full bg-green-500 rounded-full"
+                        style="width:${percent}%">
+                    </div>
+
+                </div>
+
+            `;
+
+
+            scores.appendChild(row);
+
+        });
+
+
+        // =====================================================
+        // CONFIDENCE CHECK
+        // =====================================================
+
+        if (percentage >= CONFIDENCE_THRESHOLD) {
+
+            showBenefits(className);
+
+
+            // Only speak when the detected class changes.
+            // This prevents the voice from repeating every frame.
+
+            if (lastSpokenClass !== className) {
+
+                speakPlantInformation(
+                    className,
+                    percentage
+                );
+
+                lastSpokenClass =
+                    className;
+
+            }
+
+
+        } else {
+
+            hideBenefitsWithoutResettingVoice();
+
+        }
+
+    }
+
+
+    // =========================================================
+    // SHOW BENEFITS
+    // =========================================================
+
+    function showBenefits(className) {
+
+        currentDetectedClass =
+            className;
+
+
+        if (className === "Weed") {
+
+            benefitsTitle.textContent =
+                "⚠️ Weed detected";
+
+
+            benefitsText.textContent =
+                "The AI currently identifies this plant as a weed. Avoid relying on this prediction alone because background conditions, lighting, camera angle and visual similarity can affect AI classification.";
+
+        }
+
+        else if (plantData[className]) {
+
+            benefitsTitle.textContent =
+                plantData[className].title;
+
+
+            benefitsText.textContent =
+                plantData[className].description;
+
+        }
+
+        else {
+
+            benefitsTitle.textContent =
+                "🌱 Plant detected";
+
+
+            benefitsText.textContent =
+                "The AI has identified this plant, but additional verification is recommended.";
+
+        }
+
+
+        benefitsCard.classList.remove(
+            "result-hidden"
+        );
+
+    }
+
+
+    // =========================================================
+    // HIDE BENEFITS
+    // =========================================================
+
+    function hideBenefits() {
+
+        benefitsCard.classList.add(
+            "result-hidden"
+        );
+
+
+        currentDetectedClass = "";
+
+        lastSpokenClass = "";
+
+    }
+
+
+    // =========================================================
+    // HIDE BENEFITS WITHOUT RESETTING VOICE
+    // =========================================================
+    //
+    // Important:
+    // If confidence moves 84% -> 86% -> 84%,
+    // we don't want the voice repeating constantly.
+    //
+
+    function hideBenefitsWithoutResettingVoice() {
+
+        benefitsCard.classList.add(
+            "result-hidden"
+        );
+
+        currentDetectedClass = "";
+
+    }
+
+
+    // =========================================================
+    // AUTOMATIC VOICE OUTPUT
+    // =========================================================
+
+    function speakPlantInformation(
+        className,
+        percentage
+    ) {
+
+        // Check browser support
+
+        if (!("speechSynthesis" in window)) {
+
+            console.log(
+                "Speech synthesis is not supported."
+            );
+
+            return;
+
+        }
+
+
+        let message = "";
+
+
+        // -----------------------------------------------------
+        // WEED
+        // -----------------------------------------------------
+
+        if (className === "Weed") {
+
+            message =
+                "Warning. The AI identifies this plant as a weed with " +
+                percentage +
+                " percent confidence. " +
+
+                "Please remember that AI predictions can be affected " +
+                "by background clutter, lighting, camera angle and visual noise. " +
+
+                "Do not rely on this prediction alone.";
+
+        }
+
+
+        // -----------------------------------------------------
+        // KNOWN PLANT
+        // -----------------------------------------------------
+
+        else if (plantData[className]) {
+
+            message =
+                "Plant identified as " +
+                className +
+                " with " +
+                percentage +
+                " percent confidence. " +
+
+                plantData[className].description +
+
+                " Please note that background clutter, poor lighting, " +
+                "camera angle, movement and visual noise can affect AI accuracy. " +
+
+                "This is an educational AI prediction and should be verified " +
+                "with a reliable source.";
+
+        }
+
+
+        // -----------------------------------------------------
+        // UNKNOWN CLASS
+        // -----------------------------------------------------
+
+        else {
+
+            message =
+                "The AI has identified this plant as " +
+                className +
+                " with " +
+                percentage +
+                " percent confidence. " +
+
+                "Please remember that background conditions, lighting, " +
+                "camera angle and visual noise can affect the prediction. " +
+
+                "Additional verification is recommended.";
+
+        }
+
+
+        // Stop previous speech
+
+        window.speechSynthesis.cancel();
+
+
+        // Create speech
+
+        const speech =
+            new SpeechSynthesisUtterance(
+                message
+            );
+
+
+        // Indian English
+
+        speech.lang =
+            "en-IN";
+
+
+        // Natural speaking speed
+
+        speech.rate =
+            0.88;
+
+
+        speech.pitch =
+            1;
+
+
+        speech.volume =
+            1;
+
+
+        // Speak
+
+        window.speechSynthesis.speak(
+            speech
+        );
+
+    }
+
+
+    // =========================================================
+    // INITIAL STATE
+    // =========================================================
+
+    hideBenefits();
+
+</script>
+
+</body>
+</html>
